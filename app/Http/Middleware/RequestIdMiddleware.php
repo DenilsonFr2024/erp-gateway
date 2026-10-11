@@ -4,8 +4,8 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 class RequestIdMiddleware
 {
@@ -13,7 +13,11 @@ class RequestIdMiddleware
     {
         $requestId = $request->header('X-Request-ID');
 
-        if (! $requestId) {
+        // Aceitar apenas identificadores curtos e seguros.
+        if (
+            ! is_string($requestId) ||
+            ! preg_match('/\A[a-zA-Z0-9._-]{1,100}\z/', $requestId)
+        ) {
             $requestId = (string) Str::uuid();
         }
 

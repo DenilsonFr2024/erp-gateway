@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 Route::prefix('v1')->group(function () {
     Route::get('/health', HealthController::class);
     Route::get('/test-error', function () {
-        abort(404);
+        abort(500);;
     });
     Route::get('/test-validation', function (Request $request) {
 
@@ -17,11 +17,11 @@ Route::prefix('v1')->group(function () {
             'name' => ['required', 'string', 'min:3'],
         ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $request->only(['email', 'name']),
-            'message' => 'Validation successful.',
-            'meta' => [],
-        ]);
+        return \App\Http\Responses\ApiResponse::success(
+            $request->only(['email', 'name'])
+        );
+    });
+    Route::get('/test-401', function () {
+        abort(401);
     });
 });
