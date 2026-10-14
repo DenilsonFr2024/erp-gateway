@@ -2,6 +2,15 @@
 
 return [
 
+    'erp_gateway' => [
+        'identity_url' => env('IDENTITY_SERVICE_URL'),
+        'timeout' => (int) env('MICROSERVICE_TIMEOUT', 5),
+        'connect_timeout' => (int) env('MICROSERVICE_CONNECT_TIMEOUT', 2),
+        'retry_times' => (int) env('MICROSERVICE_RETRY_TIMES', 2),
+        'retry_sleep' => (int) env('MICROSERVICE_RETRY_SLEEP', 100),
+    ],
+
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

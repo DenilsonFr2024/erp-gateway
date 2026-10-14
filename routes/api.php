@@ -1,5 +1,7 @@
 <?php
 
+
+use App\Http\Controllers\Api\V1\IdentityController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\HealthController;
 use Illuminate\Http\Request;
@@ -7,6 +9,7 @@ use Illuminate\Http\Request;
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::get('/health', HealthController::class);
+    Route::get('/identity/health', [IdentityController::class, 'health']);
     Route::get('/test-error', function () {
         abort(500);;
     });
