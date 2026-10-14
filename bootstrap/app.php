@@ -6,7 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use App\Http\Middleware\RequestIdMiddleware;
 use App\Exceptions\ApiExceptionHandler;
-
+use App\Http\Middleware\EnsureJsonContentType;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(RequestIdMiddleware::class);
+        $middleware->append(EnsureJsonContentType::class);
     })
 
     ->withExceptions(

@@ -11,6 +11,9 @@ final class ApiErrorCode
     public const AUTHORIZATION_ERROR = 'AUTHORIZATION_ERROR';
 
     public const RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND';
+    public const METHOD_NOT_ALLOWED = 'METHOD_NOT_ALLOWED';
+
+    public const UNSUPPORTED_MEDIA_TYPE = 'UNSUPPORTED_MEDIA_TYPE';
 
     public const CONFLICT = 'CONFLICT';
 

@@ -76,6 +76,9 @@
                                                                                 <li class="tocify-item level-2" data-unique="utilizacao-da-documentacao">
                                 <a href="#utilizacao-da-documentacao">Utilização da documentação</a>
                             </li>
+                                                                                <li class="tocify-item level-2" data-unique="contrato-base-de-comunicacao-v1">
+                                <a href="#contrato-base-de-comunicacao-v1">Contrato base de comunicação — v1</a>
+                            </li>
                                                                         </ul>
                             </ul>
                     <ul id="tocify-header-autenticacao-dos-pedidos" class="tocify-header">
@@ -102,7 +105,7 @@
     </ul>
 
     <ul class="toc-footer" id="last-updated">
-        <li>Última atualização: 11/10/2026</li>
+        <li>Última atualização: 14/10/2026</li>
     </ul>
 </div>
 
@@ -131,6 +134,64 @@
 <p>A autenticação ainda não está implementada. Os endpoints documentados devem ser considerados endpoints de desenvolvimento até serem aplicadas as medidas de autenticação e autorização necessárias.</p>
 <h2 id="utilizacao-da-documentacao">Utilização da documentação</h2>
 <p>Cada endpoint apresenta a sua finalidade, exemplos de pedidos e respostas e, quando aplicável, os parâmetros e cabeçalhos necessários.</p>
+<h2 id="contrato-base-de-comunicacao-v1">Contrato base de comunicação — v1</h2>
+<h3 id="metodos-http">Métodos HTTP</h3>
+<ul>
+<li>GET: consultar recursos sem os alterar.</li>
+<li>POST: criar recursos ou executar operações.</li>
+<li>PUT: substituir integralmente um recurso.</li>
+<li>PATCH: atualizar parcialmente um recurso.</li>
+<li>DELETE: solicitar a remoção de um recurso.</li>
+</ul>
+<p>Os métodos efetivamente disponíveis dependem de cada endpoint. Esta lista define a convenção, não significa que todos já estejam implementados.</p>
+<h3 id="headers">Headers</h3>
+<ul>
+<li><code>Accept: application/json</code>: indica que o cliente espera uma resposta JSON.</li>
+<li><code>Content-Type: application/json</code>: necessário quando o pedido contém um corpo JSON.</li>
+<li><code>X-Request-ID</code>: opcional no pedido. Se estiver ausente ou for inválido, o Gateway gera um identificador e devolve-o na resposta.</li>
+</ul>
+<p>O identificador no header <code>X-Request-ID</code> deve corresponder a <code>meta.request_id</code>.
+Todas as respostas da API são devolvidas em JSON. O cabeçalho <code>Accept: application/json</code> é recomendado para explicitar o formato esperado pelo cliente.</p>
+<h3 id="codigos-http-convencionados">Códigos HTTP convencionados</h3>
+<ul>
+<li>200: sucesso.</li>
+<li>201: recurso criado.</li>
+<li>204: sucesso sem conteúdo.</li>
+<li>400: pedido inválido ou regra de negócio não satisfeita.</li>
+<li>401: autenticação necessária.</li>
+<li>403: acesso não autorizado.</li>
+<li>404: recurso não encontrado.</li>
+<li>405: método não permitido.</li>
+<li>409: conflito.</li>
+<li>422: dados inválidos.</li>
+<li>429: limite de pedidos excedido.</li>
+<li>500: erro interno.</li>
+<li>503: serviço indisponível.</li>
+</ul>
+<h3 id="metadados">Metadados</h3>
+<p>As respostas JSON de sucesso e erro incluem <code>meta</code> com:</p>
+<ul>
+<li><code>request_id</code>: identificador do pedido.</li>
+<li><code>timestamp</code>: data e hora em UTC, no formato ISO 8601.</li>
+<li><code>version</code>: versão do contrato, atualmente <code>v1</code>.</li>
+</ul>
+<h3 id="paginacao">Paginação</h3>
+<p>Os endpoints que devolvem listas paginadas devem aceitar:</p>
+<ul>
+<li><code>page</code>: página solicitada; valor por defeito 1.</li>
+<li><code>per_page</code>: quantidade de resultados por página; valor por defeito 20 e máximo 100.</li>
+</ul>
+<p>As respostas paginadas devem incluir <code>meta.pagination</code>:</p>
+<pre><code>{
+  "current_page": 1,
+  "per_page": 20,
+  "total": 245,
+  "last_page": 13,
+  "has_more_pages": true
+}</code></pre>
+<p>Os valores são ilustrativos e devem refletir os resultados reais da consulta. Esta convenção não significa que já existam endpoints de negócio paginados.</p>
+<h3 id="estado-da-implementacao">Estado da implementação</h3>
+<p>Este documento define o contrato pretendido. A implementação de cada regra deve ser confirmada pelos testes automatizados. A autenticação ainda não está implementada; os endpoints atuais destinam-se ao desenvolvimento.</p>
 
         <h1 id="autenticacao-dos-pedidos">Autenticação dos pedidos</h1>
 <p>Esta API ainda não utiliza autenticação.</p>

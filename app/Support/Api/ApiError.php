@@ -30,7 +30,7 @@ class ApiError
                 'message' => $message,
                 'details' => $details,
             ],
-            'meta' => array_merge($defaultMeta, $meta),
+            'meta' => array_merge($meta, $defaultMeta),
         ], $status);
     }
 }

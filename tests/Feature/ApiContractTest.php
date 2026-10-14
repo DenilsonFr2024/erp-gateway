@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class ApiContractTest extends TestCase
@@ -223,5 +224,117 @@ class ApiContractTest extends TestCase
 
         $this->assertNotEmpty($requestId);
         $response->assertHeader('X-Request-ID', $requestId);
+    }
+
+
+    public function test_timestamp_is_iso8601_utc(): void
+    {
+        $response = $this->getJson('/api/v1/health');
+
+        $response->assertOk();
+
+        $timestamp = $response->json('meta.timestamp');
+
+        $this->assertIsString($timestamp);
+        $this->assertMatchesRegularExpression(
+            '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/',
+            $timestamp
+        );
+    }
+
+    public function test_method_not_allowed_returns_standard_error(): void
+    {
+        $response = $this->postJson('/api/v1/health');
+
+        $response
+            ->assertStatus(405)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('data', null)
+            ->assertJsonPath('error.code', 'METHOD_NOT_ALLOWED')
+            ->assertJsonStructure([
+                'error' => ['code', 'message', 'details'],
+                'meta' => ['request_id', 'timestamp', 'version'],
+            ]);
+
+        $requestId = $response->json('meta.request_id');
+
+        $this->assertNotEmpty($requestId);
+        $response->assertHeader('X-Request-ID', $requestId);
+    }
+
+    public function test_health_endpoint_returns_json_content_type(): void
+    {
+        $response = $this->getJson('/api/v1/health');
+
+        $response->assertOk();
+        $this->assertStringContainsString(
+            'application/json',
+            (string) $response->headers->get('Content-Type')
+        );
+    }
+
+
+    public function test_http_status_mappings_return_standard_error_codes(): void
+    {
+        $cases = [
+            400 => 'BUSINESS_RULE_ERROR',
+            403 => 'AUTHORIZATION_ERROR',
+            409 => 'CONFLICT',
+            415 => 'UNSUPPORTED_MEDIA_TYPE',
+            429 => 'RATE_LIMIT_EXCEEDED',
+            503 => 'SERVICE_UNAVAILABLE',
+        ];
+
+        foreach ($cases as $status => $expectedCode) {
+            $path = '/api/v1/test-status-' . $status;
+
+            Route::get($path, static function () use ($status) {
+                abort($status);
+            });
+
+            $response = $this->getJson($path);
+
+            $response
+                ->assertStatus($status)
+                ->assertJsonPath('success', false)
+                ->assertJsonPath('data', null)
+                ->assertJsonPath('error.code', $expectedCode)
+                ->assertJsonStructure([
+                    'error' => ['code', 'message', 'details'],
+                    'meta' => ['request_id', 'timestamp', 'version'],
+                ]);
+
+            $requestId = $response->json('meta.request_id');
+
+            $this->assertNotEmpty($requestId);
+            $response->assertHeader('X-Request-ID', $requestId);
+        }
+    }
+    public function test_unsupported_content_type_returns_standard_415_error(): void
+    {
+        $response = $this->call(
+            'POST',
+            '/api/v1/health',
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'text/plain',
+                'HTTP_ACCEPT' => 'application/json',
+            ],
+            'teste'
+        );
+
+        $response->assertStatus(415)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('error.code', 'UNSUPPORTED_MEDIA_TYPE')
+            ->assertJsonPath('meta.version', 'v1')
+            ->assertHeader('Content-Type', 'application/json')
+            ->assertHeader('X-Request-ID');
+
+        $this->assertSame(
+            $response->headers->get('X-Request-ID'),
+            $response->json('meta.request_id')
+        );
     }
 }

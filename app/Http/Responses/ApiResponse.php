@@ -22,7 +22,7 @@ class ApiResponse
         return response()->json([
             'success' => true,
             'data' => $data,
-            'meta' => array_merge($defaultMeta, $meta),
+            'meta' => array_merge($meta, $defaultMeta),
         ], $status);
     }
 }
