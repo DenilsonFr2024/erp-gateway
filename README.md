@@ -1,58 +1,71 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# RELATÓRIO DE TRABALHO — ULIMBO ERP GATEWAY
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Data: 12/10/2026
 
-## About Laravel
+**Tarefa:** GW-01 — Contrato base da API
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**Trabalho realizado:**
+- Revisão do contrato de comunicação da API.
+- Verificação da estrutura padronizada de respostas.
+- Análise do prefixo `/api/v1` e dos elementos de metadados.
+- Verificação da documentação e das rotas registadas.
+- Análise da paginação, que ficou documentada, mas não implementada.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**Resultado:** Auditoria inicial do contrato concluída, com 18 testes aprovados e 234 asserções.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**Estado:** Auditoria realizada; paginação ainda não implementada.
 
-## Learning Laravel
+## Data: 13/10/2026
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Tarefas:** GW-03 — Padronizar ApiError; GW-05 — Request ID / Correlation ID
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**Trabalho realizado:**
+- Continuação do trabalho de padronização das respostas da API.
+- Trabalho na identificação e rastreabilidade dos pedidos através do `X-Request-ID`.
+- Continuação da verificação dos mecanismos de comunicação e tratamento de erros do Gateway.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+**Resultado:** Estas tarefas constam do histórico de trabalho, mas não disponho de registos suficientes para atribuir a cada uma resultados individuais e confirmar todos os critérios concluídos nessa data.
 
-## Agentic Development
+**Estado:** Conclusão individual por confirmar.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Data: 14/10/2026
 
-```bash
-composer require laravel/boost --dev
+**Tarefa:** GW-12 — Routing para Identity
 
-php artisan boost:install
-```
+**Trabalho realizado:**
+- Configuração da URL do microserviço Identity no Gateway.
+- Implementação do `IdentityController`.
+- Registo da rota `GET /api/v1/identity/health`.
+- Teste manual da comunicação entre Gateway e Identity.
+- Criação de testes automatizados para os cenários de sucesso e indisponibilidade do serviço.
+- Execução da suíte completa de testes do Gateway.
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+**Resultado:** 26 testes aprovados, 346 asserções e zero falhas.
 
-## Contributing
+**Estado:** Implementação e testes concluídos. Atualização da documentação e revisão do contrato de comunicação por confirmar.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# RELATÓRIO DE TRABALHO — ULIMBO ERP GATEWAY
 
-## Code of Conduct
+## Data: 15/10/2026
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+**Tarefas:** GW-09 — Service Registry; GW-08 — Logging; GW-10 — HTTP Client
 
-## Security Vulnerabilities
+**Trabalho realizado:**
+- Criação do `ServiceRegistry` para centralizar a consulta e validação dos URLs dos microserviços registados.
+- Configuração do registo do serviço Identity em `config/services.php`, através da variável de ambiente `IDENTITY_SERVICE_URL`.
+- Manutenção da configuração anterior `identity_url` para garantir compatibilidade com o código existente.
+- Integração da fachada `Log` do Laravel no `MicroserviceClient`.
+- Implementação de registos de aviso para URLs não configurados e falhas de ligação.
+- Implementação de registos de erro quando um microserviço permanece indisponível após as tentativas permitidas.
+- Inclusão de informação de rastreabilidade nos logs, incluindo o serviço, o número da tentativa, o `request_id` e a classe da exceção.
+- Revisão do cliente HTTP para assegurar o envio de pedidos GET, o encaminhamento de cabeçalhos e parâmetros de consulta, e a configuração de timeouts.
+- Verificação do mecanismo de novas tentativas após falhas de ligação e do tratamento de indisponibilidade através de HTTP `503 Service Unavailable`.
+- Validação da sintaxe PHP do ficheiro `app/Services/MicroserviceClient.php`.
+- Execução dos testes específicos do cliente HTTP e da suíte completa de testes do Gateway.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+**Resultado:**
+- Sintaxe PHP validada sem erros.
+- Testes do `MicroserviceClient`: 5 testes aprovados, 22 asserções e zero falhas.
+- Suíte completa do Gateway: 26 testes aprovados, 346 asserções e zero falhas.
 
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**Estado:** Implementação e testes existentes concluídos com sucesso. A confirmação da escrita efetiva dos logs, a validação final da integração do `ServiceRegistry` e a revisão da cobertura de testes permanecem pendentes antes de declarar as três tarefas totalmente concluídas.

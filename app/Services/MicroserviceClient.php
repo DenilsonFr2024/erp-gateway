@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 class MicroserviceClient
@@ -21,12 +22,19 @@ class MicroserviceClient
         array $query = [],
         array $headers = [],
     ): Response {
-        $baseUrl = config("services.erp_gateway.{$service}_url");
+        try {
+            $baseUrl = app(ServiceRegistry::class)->getBaseUrl($service);
+        } catch (\InvalidArgumentException $exception) {
+            Log::warning('Gateway microservice URL is not configured.', [
+                'service' => $service,
+                'request_id' => $headers['X-Request-ID'] ?? null,
+                'exception' => $exception::class,
+            ]);
 
-        if (! is_string($baseUrl) || trim($baseUrl) === '') {
             throw new ServiceUnavailableHttpException(
                 null,
-                "The {$service} service URL is not configured."
+                "The {$service} service URL is not configured.",
+                $exception
             );
         }
 
@@ -53,6 +61,7 @@ class MicroserviceClient
         $deadline = microtime(true) + $timeout;
         $maxAttempts = $retryTimes + 1;
         $lastException = null;
+        $attemptsMade = 0;
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             $remaining = $deadline - microtime(true);
@@ -61,7 +70,10 @@ class MicroserviceClient
                 break;
             }
 
+            $attemptsMade = $attempt;
+
             $attemptTimeout = min((float) $timeout, $remaining);
+
             $attemptConnectTimeout = min(
                 (float) $connectTimeout,
                 $remaining
@@ -79,6 +91,17 @@ class MicroserviceClient
             } catch (ConnectionException $exception) {
                 $lastException = $exception;
 
+                Log::warning(
+                    'Gateway microservice connection failed.',
+                    [
+                        'service' => $service,
+                        'attempt' => $attempt,
+                        'max_attempts' => $maxAttempts,
+                        'request_id' => $headers['X-Request-ID'] ?? null,
+                        'exception' => $exception::class,
+                    ]
+                );
+
                 if ($attempt >= $maxAttempts) {
                     break;
                 }
@@ -95,6 +118,16 @@ class MicroserviceClient
                 }
             }
         }
+
+        Log::error('Gateway microservice is temporarily unavailable.', [
+            'service' => $service,
+            'attempts_made' => $attemptsMade,
+            'max_attempts' => $maxAttempts,
+            'request_id' => $headers['X-Request-ID'] ?? null,
+            'exception' => $lastException
+                ? $lastException::class
+                : null,
+        ]);
 
         throw new ServiceUnavailableHttpException(
             null,

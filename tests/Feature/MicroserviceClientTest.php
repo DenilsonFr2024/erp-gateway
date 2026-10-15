@@ -14,6 +14,7 @@ class MicroserviceClientTest extends TestCase
     {
         config([
             'services.erp_gateway.identity_url' => 'https://identity.example.test',
+            'services.erp_gateway.services.identity' => 'https://identity.example.test',
             'services.erp_gateway.timeout' => 5,
             'services.erp_gateway.connect_timeout' => 2,
             'services.erp_gateway.retry_times' => 2,
@@ -39,7 +40,7 @@ class MicroserviceClientTest extends TestCase
 
         Http::assertSent(function (Request $request): bool {
             return $request->url() ===
-                    'https://identity.example.test/api/v1/health?check=gateway'
+                'https://identity.example.test/api/v1/health?check=gateway'
                 && $request->hasHeader('X-Request-ID', 'ULIMBO-TEST-001');
         });
     }
@@ -48,6 +49,7 @@ class MicroserviceClientTest extends TestCase
     {
         config([
             'services.erp_gateway.identity_url' => null,
+            'services.erp_gateway.services.identity' => null,
         ]);
 
         $this->expectException(ServiceUnavailableHttpException::class);
@@ -163,5 +165,4 @@ class MicroserviceClientTest extends TestCase
         $this->assertNotEmpty($requestId);
         $response->assertHeader('X-Request-ID', $requestId);
     }
-
 }
