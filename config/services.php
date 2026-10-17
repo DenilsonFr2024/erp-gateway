@@ -7,6 +7,14 @@ return [
 
         'services' => [
             'identity' => env('IDENTITY_SERVICE_URL'),
+            'core' => env('CORE_SERVICE_URL'),
+            'master_data' => env('MASTER_DATA_SERVICE_URL'),
+            'sales' => env('SALES_SERVICE_URL'),
+            'inventory' => env('INVENTORY_SERVICE_URL'),
+            'finance' => env('FINANCE_SERVICE_URL'),
+            'hr' => env('HR_SERVICE_URL'),
+            'purchasing' => env('PURCHASING_SERVICE_URL'),
+            'analytics' => env('ANALYTICS_SERVICE_URL'),
         ],
 
         'timeout' => (int) env('MICROSERVICE_TIMEOUT', 5),
