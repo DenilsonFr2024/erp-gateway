@@ -124,6 +124,47 @@ class MicroserviceClientTest extends TestCase
 
 
 
+    public function test_write_requests_are_not_retried_after_connection_failure(): void
+    {
+        config([
+            'services.erp_gateway.identity_url' => 'https://identity.example.test',
+            'services.erp_gateway.services.identity' => 'https://identity.example.test',
+            'services.erp_gateway.timeout' => 5,
+            'services.erp_gateway.connect_timeout' => 2,
+            'services.erp_gateway.retry_times' => 2,
+            'services.erp_gateway.retry_sleep' => 0,
+        ]);
+
+        foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
+            $attempts = 0;
+
+            Http::fake(function (Request $request) use (&$attempts) {
+                $attempts++;
+
+                return Http::failedConnection();
+            });
+
+            try {
+                app(MicroserviceClient::class)->request(
+                    $method,
+                    'identity',
+                    '/api/v1/resource',
+                    [],
+                    [],
+                    ['name' => 'test'],
+                );
+
+                $this->fail("Era esperada uma falha de ligação para {$method}.");
+            } catch (ServiceUnavailableHttpException $exception) {
+                $this->assertSame(
+                    1,
+                    $attempts,
+                    "O método {$method} não deve ser repetido automaticamente."
+                );
+            }
+        }
+    }
+
     public function test_api_normalizes_identity_unavailability_as_503(): void
     {
         config([

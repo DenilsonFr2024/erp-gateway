@@ -132,7 +132,7 @@ class MicroserviceClient
 
         $url = rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
         $deadline = microtime(true) + $timeout;
-        $maxAttempts = $retryTimes + 1;
+        $maxAttempts = $method === 'GET' ? $retryTimes + 1 : 1;
         $lastException = null;
         $attemptsMade = 0;
 
