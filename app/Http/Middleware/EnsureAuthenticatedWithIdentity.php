@@ -13,8 +13,7 @@ class EnsureAuthenticatedWithIdentity
 {
     public function __construct(
         private readonly MicroserviceClient $client
-    ) {
-    }
+    ) {}
 
     public function handle(
         Request $request,
@@ -31,7 +30,7 @@ class EnsureAuthenticatedWithIdentity
             '/api/user',
             [],
             array_filter([
-                'Authorization' => 'Bearer '.$token,
+                'Authorization' => 'Bearer ' . $token,
                 'X-Request-ID' => $request->attributes->get('request_id'),
             ])
         );
@@ -47,7 +46,7 @@ class EnsureAuthenticatedWithIdentity
             );
         }
 
-        $userId = $response->json('id');
+        $userId = $response->json('data.id');
 
         if (is_int($userId) || (is_string($userId) && $userId !== '')) {
             $request->attributes->set('auth_user_id', (string) $userId);

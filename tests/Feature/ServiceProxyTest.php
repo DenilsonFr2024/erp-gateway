@@ -29,8 +29,15 @@ class ServiceProxyTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'identity.test/api/user' => Http::response([
-                'id' => 1,
-                'email' => 'user@example.test',
+                'success' => true,
+                'data' => [
+                    'id' => 1,
+                    'email' => 'user@example.test',
+                ],
+                'meta' => [
+                    'request_id' => 'test-request-id',
+                    'timestamp' => now()->toIso8601String(),
+                ],
             ], 200),
             'sales.example.test/*' => Http::response([
                 'success' => true,
@@ -65,8 +72,15 @@ class ServiceProxyTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'identity.test/api/user' => Http::response([
-                'id' => 1,
-                'email' => 'user@example.test',
+                'success' => true,
+                'data' => [
+                    'id' => 1,
+                    'email' => 'user@example.test',
+                ],
+                'meta' => [
+                    'request_id' => 'test-request-id',
+                    'timestamp' => now()->toIso8601String(),
+                ],
             ], 200),
             'inventory.example.test/*' => Http::response([
                 'id' => 123,
@@ -104,8 +118,15 @@ class ServiceProxyTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'identity.test/api/user' => Http::response([
-                'id' => 1,
-                'email' => 'user@example.test',
+                'success' => true,
+                'data' => [
+                    'id' => 1,
+                    'email' => 'user@example.test',
+                ],
+                'meta' => [
+                    'request_id' => 'test-request-id',
+                    'timestamp' => now()->toIso8601String(),
+                ],
             ], 200),
         ]);
 
@@ -118,7 +139,6 @@ class ServiceProxyTest extends TestCase
             ->assertJsonPath('error.code', 'SERVICE_UNAVAILABLE');
     }
 
-
     public function test_valid_idempotency_key_is_forwarded_to_service(): void
     {
         config([
@@ -128,8 +148,15 @@ class ServiceProxyTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'identity.test/api/user' => Http::response([
-                'id' => 1,
-                'email' => 'user@example.test',
+                'success' => true,
+                'data' => [
+                    'id' => 1,
+                    'email' => 'user@example.test',
+                ],
+                'meta' => [
+                    'request_id' => 'test-request-id',
+                    'timestamp' => now()->toIso8601String(),
+                ],
             ], 200),
             'finance.example.test/*' => Http::response([
                 'id' => 1,
@@ -161,8 +188,15 @@ class ServiceProxyTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'identity.test/api/user' => Http::response([
-                'id' => 1,
-                'email' => 'user@example.test',
+                'success' => true,
+                'data' => [
+                    'id' => 1,
+                    'email' => 'user@example.test',
+                ],
+                'meta' => [
+                    'request_id' => 'test-request-id',
+                    'timestamp' => now()->toIso8601String(),
+                ],
             ], 200),
             'finance.example.test/*' => Http::response([], 201),
         ]);
@@ -189,8 +223,15 @@ class ServiceProxyTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'identity.test/api/user' => Http::response([
-                'id' => 1,
-                'email' => 'user@example.test',
+                'success' => true,
+                'data' => [
+                    'id' => 1,
+                    'email' => 'user@example.test',
+                ],
+                'meta' => [
+                    'request_id' => 'test-request-id',
+                    'timestamp' => now()->toIso8601String(),
+                ],
             ], 200),
             'finance.example.test/*' => Http::response([
                 'id' => 1,
@@ -209,7 +250,6 @@ class ServiceProxyTest extends TestCase
         });
     }
 
-
     public function test_authenticated_user_id_is_forwarded_to_service(): void
     {
         config([
@@ -219,8 +259,15 @@ class ServiceProxyTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'identity.test/api/user' => Http::response([
-                'id' => 42,
-                'email' => 'user@example.test',
+                'success' => true,
+                'data' => [
+                    'id' => 42,
+                    'email' => 'user@example.test',
+                ],
+                'meta' => [
+                    'request_id' => 'test-request-id',
+                    'timestamp' => now()->toIso8601String(),
+                ],
             ], 200),
             'sales.example.test/*' => Http::response(['ok' => true], 200),
         ]);
@@ -244,8 +291,15 @@ class ServiceProxyTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'identity.test/api/user' => Http::response([
-                'id' => 42,
-                'email' => 'user@example.test',
+                'success' => true,
+                'data' => [
+                    'id' => 42,
+                    'email' => 'user@example.test',
+                ],
+                'meta' => [
+                    'request_id' => 'test-request-id',
+                    'timestamp' => now()->toIso8601String(),
+                ],
             ], 200),
             'sales.example.test/*' => Http::response(['ok' => true], 200),
         ]);

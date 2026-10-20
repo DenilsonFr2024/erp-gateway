@@ -29,6 +29,22 @@ class AuthProxyTest extends TestCase
         ], $extra);
     }
 
+    private function identityUserResponse(int $id = 1): array
+    {
+        return [
+            'success' => true,
+            'data' => [
+                'id' => $id,
+                'name' => 'Utilizador Teste',
+                'email' => 'user@example.test',
+            ],
+            'meta' => [
+                'request_id' => 'test-request-id',
+                'timestamp' => now()->toIso8601String(),
+            ],
+        ];
+    }
+
     public function test_login_forwards_credentials_without_calling_user_endpoint(): void
     {
         Http::preventStrayRequests();
@@ -50,7 +66,7 @@ class AuthProxyTest extends TestCase
                 && $request['device_name'] === 'phpunit';
         });
 
-        Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/api/user'));
+        Http::assertNotSent(fn(Request $request): bool => str_contains($request->url(), '/api/user'));
     }
 
     public function test_login_drops_unexpected_fields(): void
@@ -63,7 +79,7 @@ class AuthProxyTest extends TestCase
         $this->postJson('/api/v1/auth/login', $this->credentials(['is_admin' => true]))
             ->assertOk();
 
-        Http::assertSent(fn (Request $request): bool => ! array_key_exists('is_admin', $request->data()));
+        Http::assertSent(fn(Request $request): bool => ! array_key_exists('is_admin', $request->data()));
     }
 
     public function test_login_passes_through_invalid_credentials_error(): void
@@ -125,7 +141,7 @@ class AuthProxyTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            'identity.test/api/user' => Http::response(['id' => 1], 200),
+            'identity.test/api/user' => Http::response($this->identityUserResponse(), 200),
             'identity.test/api/logout' => Http::response([
                 'success' => true,
                 'data' => ['message' => 'ok'],
@@ -141,5 +157,68 @@ class AuthProxyTest extends TestCase
             return $request->url() === 'http://identity.test/api/logout'
                 && $request->hasHeader('Authorization', 'Bearer valid-test-token');
         });
+    }
+
+    // ---------------------------------------------------------------
+    // Novos testes para GET /api/v1/auth/me
+    // ---------------------------------------------------------------
+
+    public function test_me_without_token_is_rejected_without_calling_identity(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake();
+
+        $this->getJson('/api/v1/auth/me')->assertStatus(401);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_me_with_valid_token_returns_user(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            // O middleware chama /api/user
+            'identity.test/api/user' => Http::response($this->identityUserResponse(42), 200),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.id', 42)
+            ->assertJsonPath('data.email', 'user@example.test');
+
+        Http::assertSent(function (Request $request): bool {
+            return $request->method() === 'GET'
+                && $request->url() === 'http://identity.test/api/user'
+                && $request->hasHeader('Authorization', 'Bearer valid-test-token');
+        });
+    }
+
+    public function test_me_when_identity_rejects_token_returns_401(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response([
+                'success' => false,
+                'error' => ['code' => 'UNAUTHENTICATED'],
+            ], 401),
+        ]);
+
+        $this->withToken('invalid-token')
+            ->getJson('/api/v1/auth/me')
+            ->assertStatus(401);
+    }
+
+    public function test_me_when_identity_is_unavailable_returns_503(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response('boom', 500),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->getJson('/api/v1/auth/me')
+            ->assertStatus(503);
     }
 }

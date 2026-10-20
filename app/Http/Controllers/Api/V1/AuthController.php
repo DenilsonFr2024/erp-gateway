@@ -39,6 +39,18 @@ class AuthController extends Controller
         return $this->respond($upstream);
     }
 
+    public function me(Request $request, MicroserviceClient $client): HttpResponse
+    {
+        $upstream = $client->get(
+            'identity',
+            '/api/user',
+            [],
+            $this->headers($request, true),
+        );
+
+        return $this->respond($upstream);
+    }
+
     private function headers(Request $request, bool $withToken): array
     {
         $headers = [];
@@ -48,11 +60,10 @@ class AuthController extends Controller
         }
 
         if ($withToken) {
-            $headers['Authorization'] = 'Bearer '.$request->bearerToken();
+            $headers['Authorization'] = 'Bearer ' . $request->bearerToken();
         }
 
         $requestId = $request->attributes->get('request_id');
-
         if (is_string($requestId) && $requestId !== '') {
             $headers['X-Request-ID'] = $requestId;
         }

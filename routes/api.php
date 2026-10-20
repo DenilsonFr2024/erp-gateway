@@ -41,6 +41,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
 
     Route::middleware(EnsureAuthenticatedWithIdentity::class)->group(function () use ($methods) {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+        Route::get('/auth/me', [AuthController::class, 'me']);
 
         Route::match($methods, '/core/{path?}', [ServiceProxyController::class, 'core'])
             ->where('path', '.*');
