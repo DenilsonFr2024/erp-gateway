@@ -75,6 +75,12 @@ class ServiceProxyController extends Controller
             $headers['X-Request-ID'] = $requestId;
         }
 
+        $userId = $request->attributes->get('auth_user_id');
+
+        if (is_string($userId) && $userId !== '') {
+            $headers['X-User-ID'] = $userId;
+        }
+
         if ($request->headers->has('Idempotency-Key')) {
             $idempotencyKey = $request->header('Idempotency-Key');
 

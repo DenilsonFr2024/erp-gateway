@@ -208,4 +208,57 @@ class ServiceProxyTest extends TestCase
                 && ! $request->hasHeader('Idempotency-Key');
         });
     }
+
+
+    public function test_authenticated_user_id_is_forwarded_to_service(): void
+    {
+        config([
+            'services.erp_gateway.services.sales' => 'https://sales.example.test',
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response([
+                'id' => 42,
+                'email' => 'user@example.test',
+            ], 200),
+            'sales.example.test/*' => Http::response(['ok' => true], 200),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->getJson('/api/v1/sales/api/v1/orders')
+            ->assertOk();
+
+        Http::assertSent(function (Request $request): bool {
+            return str_contains($request->url(), 'sales.example.test')
+                && $request->hasHeader('X-User-ID', '42');
+        });
+    }
+
+    public function test_client_supplied_user_id_header_is_ignored(): void
+    {
+        config([
+            'services.erp_gateway.services.sales' => 'https://sales.example.test',
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response([
+                'id' => 42,
+                'email' => 'user@example.test',
+            ], 200),
+            'sales.example.test/*' => Http::response(['ok' => true], 200),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->withHeader('X-User-ID', '999')
+            ->getJson('/api/v1/sales/api/v1/orders')
+            ->assertOk();
+
+        Http::assertSent(function (Request $request): bool {
+            return str_contains($request->url(), 'sales.example.test')
+                && $request->hasHeader('X-User-ID', '42')
+                && ! $request->hasHeader('X-User-ID', '999');
+        });
+    }
 }

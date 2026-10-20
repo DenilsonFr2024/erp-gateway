@@ -47,6 +47,12 @@ class EnsureAuthenticatedWithIdentity
             );
         }
 
+        $userId = $response->json('id');
+
+        if (is_int($userId) || (is_string($userId) && $userId !== '')) {
+            $request->attributes->set('auth_user_id', (string) $userId);
+        }
+
         return $next($request);
     }
 }
