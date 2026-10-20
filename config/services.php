@@ -17,6 +17,20 @@ return [
             'analytics' => env('ANALYTICS_SERVICE_URL'),
         ],
 
+        'shared_secret' => env('GATEWAY_SHARED_SECRET'),
+
+        'secrets' => [
+            'identity' => env('IDENTITY_SERVICE_SECRET'),
+            'core' => env('CORE_SERVICE_SECRET'),
+            'master_data' => env('MASTER_DATA_SERVICE_SECRET'),
+            'sales' => env('SALES_SERVICE_SECRET'),
+            'inventory' => env('INVENTORY_SERVICE_SECRET'),
+            'finance' => env('FINANCE_SERVICE_SECRET'),
+            'hr' => env('HR_SERVICE_SECRET'),
+            'purchasing' => env('PURCHASING_SERVICE_SECRET'),
+            'analytics' => env('ANALYTICS_SERVICE_SECRET'),
+        ],
+
         'timeout' => (int) env('MICROSERVICE_TIMEOUT', 5),
         'connect_timeout' => (int) env('MICROSERVICE_CONNECT_TIMEOUT', 2),
         'retry_times' => (int) env('MICROSERVICE_RETRY_TIMES', 2),

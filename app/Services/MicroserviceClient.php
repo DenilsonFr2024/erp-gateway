@@ -136,6 +136,13 @@ class MicroserviceClient
         $lastException = null;
         $attemptsMade = 0;
 
+        $secret = config("services.erp_gateway.secrets.{$service}")
+            ?: config('services.erp_gateway.shared_secret');
+
+        if (is_string($secret) && $secret !== '') {
+            $headers['X-Gateway-Secret'] = $secret;
+        }
+
         $options = ['query' => $query];
 
         if ($body !== null && $method !== 'GET') {
