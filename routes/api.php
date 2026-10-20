@@ -12,24 +12,26 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::get('/health', HealthController::class);
     Route::get('/identity/health', [IdentityController::class, 'health']);
 
-    Route::get('/test-error', function () {
-        abort(500);
-    });
+    if (app()->environment(['local', 'testing'])) {
+        Route::get('/test-error', function () {
+            abort(500);
+        });
 
-    Route::get('/test-validation', function (Request $request) {
-        $request->validate([
-            'email' => ['required', 'email'],
-            'name' => ['required', 'string', 'min:3'],
-        ]);
+        Route::get('/test-validation', function (Request $request) {
+            $request->validate([
+                'email' => ['required', 'email'],
+                'name' => ['required', 'string', 'min:3'],
+            ]);
 
-        return ApiResponse::success(
-            $request->only(['email', 'name'])
-        );
-    });
+            return ApiResponse::success(
+                $request->only(['email', 'name'])
+            );
+        });
 
-    Route::get('/test-401', function () {
-        abort(401);
-    });
+        Route::get('/test-401', function () {
+            abort(401);
+        });
+    }
 
     $methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
