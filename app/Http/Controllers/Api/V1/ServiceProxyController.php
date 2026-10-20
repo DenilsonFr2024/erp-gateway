@@ -7,6 +7,7 @@ use App\Services\MicroserviceClient;
 use Illuminate\Http\Request;
 use Illuminate\Http\Client\Response as ClientResponse;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ServiceProxyController extends Controller
 {
@@ -72,6 +73,22 @@ class ServiceProxyController extends Controller
 
         if (is_string($requestId) && $requestId !== '') {
             $headers['X-Request-ID'] = $requestId;
+        }
+
+        if ($request->headers->has('Idempotency-Key')) {
+            $idempotencyKey = $request->header('Idempotency-Key');
+
+            if (
+                ! is_string($idempotencyKey) ||
+                ! preg_match('/\A[a-zA-Z0-9._:-]{8,128}\z/', $idempotencyKey)
+            ) {
+                throw new HttpException(
+                    400,
+                    'The Idempotency-Key header is invalid.'
+                );
+            }
+
+            $headers['Idempotency-Key'] = $idempotencyKey;
         }
 
         $method = $request->method();

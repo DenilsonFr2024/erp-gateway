@@ -117,4 +117,95 @@ class ServiceProxyTest extends TestCase
             ->assertJsonPath('data', null)
             ->assertJsonPath('error.code', 'SERVICE_UNAVAILABLE');
     }
+
+
+    public function test_valid_idempotency_key_is_forwarded_to_service(): void
+    {
+        config([
+            'services.erp_gateway.services.finance' => 'https://finance.example.test',
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response([
+                'id' => 1,
+                'email' => 'user@example.test',
+            ], 200),
+            'finance.example.test/*' => Http::response([
+                'id' => 1,
+            ], 201, ['Content-Type' => 'application/json']),
+        ]);
+
+        $response = $this->withToken('valid-test-token')
+            ->withHeader('Idempotency-Key', 'ulimbo-key-0001')
+            ->postJson('/api/v1/finance/api/v1/payments', [
+                'amount' => 100,
+            ]);
+
+        $response->assertStatus(201);
+
+        Http::assertSent(function (Request $request): bool {
+            return str_starts_with(
+                $request->url(),
+                'https://finance.example.test/api/v1/payments'
+            ) && $request->hasHeader('Idempotency-Key', 'ulimbo-key-0001');
+        });
+    }
+
+    public function test_invalid_idempotency_key_returns_400_and_is_not_forwarded(): void
+    {
+        config([
+            'services.erp_gateway.services.finance' => 'https://finance.example.test',
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response([
+                'id' => 1,
+                'email' => 'user@example.test',
+            ], 200),
+            'finance.example.test/*' => Http::response([], 201),
+        ]);
+
+        $response = $this->withToken('valid-test-token')
+            ->withHeader('Idempotency-Key', 'curta')
+            ->postJson('/api/v1/finance/api/v1/payments', [
+                'amount' => 100,
+            ]);
+
+        $response->assertStatus(400);
+
+        Http::assertNotSent(function (Request $request): bool {
+            return str_contains($request->url(), 'finance.example.test');
+        });
+    }
+
+    public function test_request_without_idempotency_key_does_not_send_the_header(): void
+    {
+        config([
+            'services.erp_gateway.services.finance' => 'https://finance.example.test',
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response([
+                'id' => 1,
+                'email' => 'user@example.test',
+            ], 200),
+            'finance.example.test/*' => Http::response([
+                'id' => 1,
+            ], 201, ['Content-Type' => 'application/json']),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->postJson('/api/v1/finance/api/v1/payments', [
+                'amount' => 100,
+            ])
+            ->assertStatus(201);
+
+        Http::assertSent(function (Request $request): bool {
+            return str_contains($request->url(), 'finance.example.test')
+                && ! $request->hasHeader('Idempotency-Key');
+        });
+    }
 }
