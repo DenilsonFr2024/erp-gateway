@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\IdentityController;
 use App\Http\Controllers\Api\V1\ServiceProxyController;
@@ -33,9 +34,14 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         });
     }
 
+    Route::post('/auth/login', [AuthController::class, 'login'])
+        ->middleware('throttle:auth-login');
+
     $methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
     Route::middleware(EnsureAuthenticatedWithIdentity::class)->group(function () use ($methods) {
+        Route::post('/auth/logout', [AuthController::class, 'logout']);
+
         Route::match($methods, '/core/{path?}', [ServiceProxyController::class, 'core'])
             ->where('path', '.*');
         Route::match($methods, '/master-data/{path?}', [ServiceProxyController::class, 'masterData'])
