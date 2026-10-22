@@ -122,4 +122,48 @@ class AuthController extends Controller
 
         return $this->respond($upstream);
     }
+    public function forgotPassword(Request $request, MicroserviceClient $client): HttpResponse
+    {
+        $body = $request->only(['email']);
+
+        $upstream = $client->post(
+            'identity',
+            '/api/password/forgot',
+            $body === [] ? null : $body,
+            [],
+            $this->headers($request, false),
+        );
+
+        return $this->respond($upstream);
+    }
+
+    public function resetPassword(Request $request, MicroserviceClient $client): HttpResponse
+    {
+        $body = $request->only(['token', 'email', 'password', 'password_confirmation']);
+
+        $upstream = $client->post(
+            'identity',
+            '/api/password/reset',
+            $body === [] ? null : $body,
+            [],
+            $this->headers($request, false),
+        );
+
+        return $this->respond($upstream);
+    }
+
+    public function changePassword(Request $request, MicroserviceClient $client): HttpResponse
+    {
+        $body = $request->only(['current_password', 'password', 'password_confirmation']);
+
+        $upstream = $client->post(
+            'identity',
+            '/api/password/change',
+            $body === [] ? null : $body,
+            [],
+            $this->headers($request, true),
+        );
+
+        return $this->respond($upstream);
+    }
 }

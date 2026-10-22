@@ -350,4 +350,83 @@ class AuthProxyTest extends TestCase
             ->postJson('/api/v1/auth/refresh')
             ->assertStatus(401);
     }
+
+    // ---------------------------------------------------------------
+    // PASSWORD RESET / CHANGE
+    // ---------------------------------------------------------------
+
+    public function test_forgot_password_forwards_to_identity(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/password/forgot' => Http::response([
+                'success' => true,
+                'data' => ['message' => 'Email enviado.'],
+            ], 200),
+        ]);
+
+        $this->postJson('/api/v1/auth/password/forgot', ['email' => 'user@teste.com'])
+            ->assertOk()
+            ->assertJsonPath('data.message', 'Email enviado.');
+
+        Http::assertSent(fn(Request $r) => $r->url() === 'http://identity.test/api/password/forgot');
+    }
+
+    public function test_reset_password_forwards_to_identity(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/password/reset' => Http::response([
+                'success' => true,
+                'data' => ['message' => 'Password redefinida.'],
+            ], 200),
+        ]);
+
+        $this->postJson('/api/v1/auth/password/reset', [
+            'token' => 'abc',
+            'email' => 'user@teste.com',
+            'password' => 'New-Password-2026',
+            'password_confirmation' => 'New-Password-2026',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.message', 'Password redefinida.');
+    }
+
+    public function test_change_password_requires_token(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake();
+
+        $this->postJson('/api/v1/auth/password/change', [
+            'current_password' => 'Old',
+            'password' => 'New-Password-2026',
+            'password_confirmation' => 'New-Password-2026',
+        ])->assertStatus(401);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_change_password_forwards_token_and_body(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response($this->identityUserResponse(), 200),
+            'identity.test/api/password/change' => Http::response([
+                'success' => true,
+                'data' => ['message' => 'Password alterada.'],
+            ], 200),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->postJson('/api/v1/auth/password/change', [
+                'current_password' => 'Old-Password-2026',
+                'password' => 'New-Password-2026',
+                'password_confirmation' => 'New-Password-2026',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.message', 'Password alterada.');
+
+        Http::assertSent(fn(Request $r) => $r->url() === 'http://identity.test/api/password/change'
+            && $r->hasHeader('Authorization', 'Bearer valid-test-token'));
+    }
 }

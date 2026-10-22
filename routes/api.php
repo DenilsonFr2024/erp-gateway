@@ -13,7 +13,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::get('/health', HealthController::class);
 
     Route::get('/identity/health', [IdentityController::class, 'health']);
-
+    Route::post('/auth/password/forgot', [AuthController::class, 'forgotPassword']);
+    Route::post('/auth/password/reset', [AuthController::class, 'resetPassword']);
     if (app()->environment(['local', 'testing'])) {
         Route::get('/test-error', function () {
             abort(500);
@@ -45,7 +46,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/me', [AuthController::class, 'me']);
-
+        Route::post('/auth/password/change', [AuthController::class, 'changePassword']);
         Route::match($methods, '/core/{path?}', [ServiceProxyController::class, 'core'])
             ->where('path', '.*');
         Route::match($methods, '/master-data/{path?}', [ServiceProxyController::class, 'masterData'])
