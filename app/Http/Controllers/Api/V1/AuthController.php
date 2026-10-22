@@ -13,11 +13,35 @@ class AuthController extends Controller
 {
     public function login(Request $request, MicroserviceClient $client): HttpResponse
     {
-        $body = $request->only(['email', 'password', 'device_name']);
+        $body = $request->only(['login', 'password', 'device_name']);
 
         $upstream = $client->post(
             'identity',
             '/api/login',
+            $body === [] ? null : $body,
+            [],
+            $this->headers($request, false),
+        );
+
+        return $this->respond($upstream);
+    }
+
+    public function register(Request $request, MicroserviceClient $client): HttpResponse
+    {
+        $body = $request->only([
+            'username',
+            'email',
+            'password',
+            'password_confirmation',
+            'account_type',
+            'applications',
+            'role',
+            'company_id',
+        ]);
+
+        $upstream = $client->post(
+            'identity',
+            '/api/register',
             $body === [] ? null : $body,
             [],
             $this->headers($request, false),

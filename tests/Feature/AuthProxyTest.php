@@ -23,9 +23,22 @@ class AuthProxyTest extends TestCase
     private function credentials(array $extra = []): array
     {
         return array_merge([
-            'email' => 'user@example.test',
+            'login' => 'admin.ulimbo',
             'password' => 'secret-password',
             'device_name' => 'phpunit',
+        ], $extra);
+    }
+
+    private function registerPayload(array $extra = []): array
+    {
+        return array_merge([
+            'username' => 'cliente.teste',
+            'email' => 'cliente@teste.ao',
+            'password' => 'Password-Segura-2026',
+            'password_confirmation' => 'Password-Segura-2026',
+            'account_type' => 'client',
+            'applications' => ['erp'],
+            'role' => 'client_contact',
         ], $extra);
     }
 
@@ -45,6 +58,10 @@ class AuthProxyTest extends TestCase
         ];
     }
 
+    // ---------------------------------------------------------------
+    // LOGIN
+    // ---------------------------------------------------------------
+
     public function test_login_forwards_credentials_without_calling_user_endpoint(): void
     {
         Http::preventStrayRequests();
@@ -62,7 +79,7 @@ class AuthProxyTest extends TestCase
         Http::assertSent(function (Request $request): bool {
             return $request->method() === 'POST'
                 && $request->url() === 'http://identity.test/api/login'
-                && $request['email'] === 'user@example.test'
+                && $request['login'] === 'admin.ulimbo'
                 && $request['device_name'] === 'phpunit';
         });
 
@@ -127,6 +144,68 @@ class AuthProxyTest extends TestCase
             ->assertStatus(429);
     }
 
+    // ---------------------------------------------------------------
+    // REGISTER
+    // ---------------------------------------------------------------
+
+    public function test_register_forwards_payload_to_identity(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/register' => Http::response([
+                'success' => true,
+                'data' => [
+                    'user_id' => 'uuid-123',
+                    'username' => 'cliente.teste',
+                    'status' => 'pending_approval',
+                ],
+            ], 201),
+        ]);
+
+        $this->postJson('/api/v1/auth/register', $this->registerPayload())
+            ->assertCreated()
+            ->assertJsonPath('data.username', 'cliente.teste')
+            ->assertJsonPath('data.status', 'pending_approval');
+
+        Http::assertSent(function (Request $request): bool {
+            return $request->method() === 'POST'
+                && $request->url() === 'http://identity.test/api/register'
+                && $request['username'] === 'cliente.teste'
+                && $request['account_type'] === 'client'
+                && $request['role'] === 'client_contact';
+        });
+    }
+
+    public function test_register_validation_error_is_passed_through(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/register' => Http::response([
+                'message' => 'The username has already been taken.',
+                'errors' => ['username' => ['The username has already been taken.']],
+            ], 422),
+        ]);
+
+        $this->postJson('/api/v1/auth/register', $this->registerPayload())
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['username']);
+    }
+
+    public function test_register_identity_unavailable_returns_503(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/register' => Http::response('boom', 500),
+        ]);
+
+        $this->postJson('/api/v1/auth/register', $this->registerPayload())
+            ->assertStatus(503);
+    }
+
+    // ---------------------------------------------------------------
+    // LOGOUT
+    // ---------------------------------------------------------------
+
     public function test_logout_without_token_is_rejected_without_calling_identity(): void
     {
         Http::preventStrayRequests();
@@ -160,7 +239,7 @@ class AuthProxyTest extends TestCase
     }
 
     // ---------------------------------------------------------------
-    // Novos testes para GET /api/v1/auth/me
+    // ME
     // ---------------------------------------------------------------
 
     public function test_me_without_token_is_rejected_without_calling_identity(): void
@@ -177,7 +256,6 @@ class AuthProxyTest extends TestCase
     {
         Http::preventStrayRequests();
         Http::fake([
-            // O middleware chama /api/user
             'identity.test/api/user' => Http::response($this->identityUserResponse(42), 200),
         ]);
 
