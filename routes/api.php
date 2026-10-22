@@ -15,6 +15,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::get('/identity/health', [IdentityController::class, 'health']);
     Route::post('/auth/password/forgot', [AuthController::class, 'forgotPassword']);
     Route::post('/auth/password/reset', [AuthController::class, 'resetPassword']);
+
     if (app()->environment(['local', 'testing'])) {
         Route::get('/test-error', function () {
             abort(500);
@@ -67,6 +68,10 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
             Route::match($methods, '/purchasing/{path?}', [ServiceProxyController::class, 'purchasing'])
                 ->where('path', '.*');
             Route::match($methods, '/analytics/{path?}', [ServiceProxyController::class, 'analytics'])
+                ->where('path', '.*');
+
+            // Sync service
+            Route::match($methods, '/sync/{path?}', [ServiceProxyController::class, 'sync'])
                 ->where('path', '.*');
         });
     });

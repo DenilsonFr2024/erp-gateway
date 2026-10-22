@@ -15,6 +15,7 @@ return [
             'hr' => env('HR_SERVICE_URL'),
             'purchasing' => env('PURCHASING_SERVICE_URL'),
             'analytics' => env('ANALYTICS_SERVICE_URL'),
+            'sync' => env('SYNC_SERVICE_URL'),
         ],
 
         'shared_secret' => env('GATEWAY_SHARED_SECRET'),

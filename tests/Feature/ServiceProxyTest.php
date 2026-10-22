@@ -256,4 +256,23 @@ class ServiceProxyTest extends TestCase
                 && ! $request->hasHeader('X-User-ID', '999');
         });
     }
+    public function test_sync_proxy_forwards_to_sync_service(): void
+    {
+        config(['services.erp_gateway.services.sync' => 'https://sync.example.test']);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response($this->identityUserResponse(), 200),
+            'sync.example.test/*' => Http::response(['success' => true], 200),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->postJson('/api/v1/sync/pull', [
+                'device_id' => '550e8400-e29b-41d4-a716-446655440001',
+                'entity_type' => 'sale',
+            ])
+            ->assertOk();
+
+        Http::assertSent(fn(Request $r) => str_contains($r->url(), 'sync.example.test/api/sync/pull'));
+    }
 }

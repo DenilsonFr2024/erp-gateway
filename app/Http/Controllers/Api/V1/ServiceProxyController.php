@@ -58,12 +58,14 @@ class ServiceProxyController extends Controller
     ): HttpResponse {
         $headers = [];
 
-        foreach ([
-            'Accept',
-            'Content-Type',
-            'Authorization',
-            'Accept-Language',
-        ] as $header) {
+        foreach (
+            [
+                'Accept',
+                'Content-Type',
+                'Authorization',
+                'Accept-Language',
+            ] as $header
+        ) {
             if ($request->headers->has($header)) {
                 $headers[$header] = $request->header($header);
             }
@@ -124,15 +126,17 @@ class ServiceProxyController extends Controller
 
         $responseHeaders = [];
 
-        foreach ([
-            'Content-Type',
-            'Cache-Control',
-            'ETag',
-            'Last-Modified',
-            'Location',
-            'Retry-After',
-            'WWW-Authenticate',
-        ] as $header) {
+        foreach (
+            [
+                'Content-Type',
+                'Cache-Control',
+                'ETag',
+                'Last-Modified',
+                'Location',
+                'Retry-After',
+                'WWW-Authenticate',
+            ] as $header
+        ) {
             $value = $upstream->header($header);
 
             if ($value !== null && $value !== '') {
@@ -146,5 +150,11 @@ class ServiceProxyController extends Controller
             : $upstream->body();
 
         return response($content, $status)->withHeaders($responseHeaders);
+    }
+    public function sync(Request $request, ?string $path = null): HttpResponse
+    {
+        $path = $path ? 'api/sync/' . ltrim($path, '/') : 'api/sync';
+
+        return $this->forward($request, 'sync', $path);
     }
 }
