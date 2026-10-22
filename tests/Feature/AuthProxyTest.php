@@ -299,4 +299,55 @@ class AuthProxyTest extends TestCase
             ->getJson('/api/v1/auth/me')
             ->assertStatus(503);
     }
+    // ---------------------------------------------------------------
+    // REFRESH
+    // ---------------------------------------------------------------
+
+    public function test_refresh_without_token_is_rejected(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake();
+
+        $this->postJson('/api/v1/auth/refresh')->assertStatus(401);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_refresh_forwards_token_and_returns_new_token(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response($this->identityUserResponse(), 200),
+            'identity.test/api/refresh' => Http::response([
+                'success' => true,
+                'data' => ['token' => 'new|token', 'token_type' => 'Bearer'],
+            ], 200),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->postJson('/api/v1/auth/refresh')
+            ->assertOk()
+            ->assertJsonPath('data.token', 'new|token');
+
+        Http::assertSent(function (Request $request): bool {
+            return $request->url() === 'http://identity.test/api/refresh'
+                && $request->hasHeader('Authorization', 'Bearer valid-test-token');
+        });
+    }
+
+    public function test_refresh_when_identity_rejects_token_returns_401(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response(['id' => 1], 200),
+            'identity.test/api/refresh' => Http::response([
+                'success' => false,
+                'error' => ['code' => 'UNAUTHENTICATED'],
+            ], 401),
+        ]);
+
+        $this->withToken('invalid-token')
+            ->postJson('/api/v1/auth/refresh')
+            ->assertStatus(401);
+    }
 }

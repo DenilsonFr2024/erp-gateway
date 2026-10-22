@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::get('/health', HealthController::class);
+
     Route::get('/identity/health', [IdentityController::class, 'health']);
 
     if (app()->environment(['local', 'testing'])) {
@@ -41,6 +42,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     $methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
     Route::middleware(EnsureAuthenticatedWithIdentity::class)->group(function () use ($methods) {
+        Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/me', [AuthController::class, 'me']);
 

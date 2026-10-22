@@ -110,4 +110,16 @@ class AuthController extends Controller
                 $upstream->header('Content-Type') ?: 'application/json'
             );
     }
+    public function refresh(Request $request, MicroserviceClient $client): HttpResponse
+    {
+        $upstream = $client->post(
+            'identity',
+            '/api/refresh',
+            null,
+            [],
+            $this->headers($request, true),
+        );
+
+        return $this->respond($upstream);
+    }
 }
