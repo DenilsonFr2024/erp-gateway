@@ -3,7 +3,8 @@
 namespace Tests\Feature;
 
 use App\Http\Middleware\EnsureAuthenticatedWithIdentity;
-use Illuminate\Http\Client\Request;
+use Illuminate\Http\Client\Request as ClientRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -24,6 +25,14 @@ class EnsureAuthenticatedWithIdentityTest extends TestCase
         Route::middleware(EnsureAuthenticatedWithIdentity::class)
             ->get('/api/v1/test-auth-middleware', function () {
                 return response()->json(['reached' => true]);
+            });
+
+        Route::middleware(EnsureAuthenticatedWithIdentity::class)
+            ->get('/api/v1/test-applications', function (Request $request) {
+                return response()->json([
+                    'applications' => $request->attributes->get('auth_applications'),
+                    'user_id' => $request->attributes->get('auth_user_id'),
+                ]);
             });
     }
 
@@ -56,7 +65,7 @@ class EnsureAuthenticatedWithIdentityTest extends TestCase
             ->assertJsonPath('success', false)
             ->assertJsonPath('error.code', 'AUTHENTICATION_ERROR');
 
-        Http::assertSent(function (Request $request): bool {
+        Http::assertSent(function (ClientRequest $request): bool {
             return $request->url() === 'http://identity.test/api/user'
                 && $request->hasHeader('Authorization', 'Bearer invalid-token');
         });
@@ -67,8 +76,18 @@ class EnsureAuthenticatedWithIdentityTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'identity.test/api/user' => Http::response([
-                'id' => 1,
-                'email' => 'user@example.test',
+                'success' => true,
+                'data' => [
+                    'user' => [
+                        'user_id' => 'user-123',
+                        'username' => 'teste',
+                        'email' => 'user@example.test',
+                        'account_type' => 'internal',
+                        'status' => 'active',
+                    ],
+                    'applications' => ['erp'],
+                    'roles' => ['ulimbo_admin'],
+                ],
             ], 200),
         ]);
 
@@ -78,10 +97,37 @@ class EnsureAuthenticatedWithIdentityTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('reached', true);
 
-        Http::assertSent(function (Request $request): bool {
+        Http::assertSent(function (ClientRequest $request): bool {
             return $request->url() === 'http://identity.test/api/user'
                 && $request->hasHeader('Authorization', 'Bearer valid-test-token');
         });
+    }
+
+    public function test_valid_token_stores_applications_in_request(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response([
+                'success' => true,
+                'data' => [
+                    'user' => [
+                        'user_id' => 'user-123',
+                        'username' => 'teste',
+                        'email' => 'user@example.test',
+                        'account_type' => 'internal',
+                        'status' => 'active',
+                    ],
+                    'applications' => ['erp', 'website'],
+                    'roles' => ['ulimbo_admin'],
+                ],
+            ], 200),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->getJson('/api/v1/test-applications')
+            ->assertOk()
+            ->assertJsonPath('applications', ['erp', 'website'])
+            ->assertJsonPath('user_id', 'user-123');
     }
 
     public function test_identity_server_error_fails_closed_with_503(): void

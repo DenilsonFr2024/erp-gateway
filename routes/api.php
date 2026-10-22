@@ -43,26 +43,31 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     $methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
     Route::middleware(EnsureAuthenticatedWithIdentity::class)->group(function () use ($methods) {
-        Route::post('/auth/refresh', [AuthController::class, 'refresh']);
+        // Rotas de auth (sem app.access)
         Route::post('/auth/logout', [AuthController::class, 'logout']);
-        Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/password/change', [AuthController::class, 'changePassword']);
         Route::post('/auth/approve/{user_id}', [AuthController::class, 'approveUser']);
-        Route::match($methods, '/core/{path?}', [ServiceProxyController::class, 'core'])
-            ->where('path', '.*');
-        Route::match($methods, '/master-data/{path?}', [ServiceProxyController::class, 'masterData'])
-            ->where('path', '.*');
-        Route::match($methods, '/sales/{path?}', [ServiceProxyController::class, 'sales'])
-            ->where('path', '.*');
-        Route::match($methods, '/inventory/{path?}', [ServiceProxyController::class, 'inventory'])
-            ->where('path', '.*');
-        Route::match($methods, '/finance/{path?}', [ServiceProxyController::class, 'finance'])
-            ->where('path', '.*');
-        Route::match($methods, '/hr/{path?}', [ServiceProxyController::class, 'hr'])
-            ->where('path', '.*');
-        Route::match($methods, '/purchasing/{path?}', [ServiceProxyController::class, 'purchasing'])
-            ->where('path', '.*');
-        Route::match($methods, '/analytics/{path?}', [ServiceProxyController::class, 'analytics'])
-            ->where('path', '.*');
+        Route::get('/auth/me', [AuthController::class, 'me']);
+
+        // Rotas de proxy com app.access:erp
+        Route::middleware('app.access:erp')->group(function () use ($methods) {
+            Route::match($methods, '/core/{path?}', [ServiceProxyController::class, 'core'])
+                ->where('path', '.*');
+            Route::match($methods, '/master-data/{path?}', [ServiceProxyController::class, 'masterData'])
+                ->where('path', '.*');
+            Route::match($methods, '/sales/{path?}', [ServiceProxyController::class, 'sales'])
+                ->where('path', '.*');
+            Route::match($methods, '/inventory/{path?}', [ServiceProxyController::class, 'inventory'])
+                ->where('path', '.*');
+            Route::match($methods, '/finance/{path?}', [ServiceProxyController::class, 'finance'])
+                ->where('path', '.*');
+            Route::match($methods, '/hr/{path?}', [ServiceProxyController::class, 'hr'])
+                ->where('path', '.*');
+            Route::match($methods, '/purchasing/{path?}', [ServiceProxyController::class, 'purchasing'])
+                ->where('path', '.*');
+            Route::match($methods, '/analytics/{path?}', [ServiceProxyController::class, 'analytics'])
+                ->where('path', '.*');
+        });
     });
 });

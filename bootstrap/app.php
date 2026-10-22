@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(RequestIdMiddleware::class);
         $middleware->append(EnsureJsonContentType::class);
+
+        $middleware->alias([
+            'app.access' => \App\Http\Middleware\EnsureApplicationAccess::class,
+        ]);
     })
 
     ->withExceptions(

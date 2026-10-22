@@ -46,11 +46,14 @@ class EnsureAuthenticatedWithIdentity
             );
         }
 
-        $userId = $response->json('data.id');
+        $userId = $response->json('data.user.user_id');
+        $applications = $response->json('data.applications', []);
 
-        if (is_int($userId) || (is_string($userId) && $userId !== '')) {
-            $request->attributes->set('auth_user_id', (string) $userId);
+        if (is_string($userId) && $userId !== '') {
+            $request->attributes->set('auth_user_id', $userId);
         }
+
+        $request->attributes->set('auth_applications', is_array($applications) ? $applications : []);
 
         return $next($request);
     }

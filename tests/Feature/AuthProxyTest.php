@@ -47,9 +47,15 @@ class AuthProxyTest extends TestCase
         return [
             'success' => true,
             'data' => [
-                'id' => $id,
-                'name' => 'Utilizador Teste',
-                'email' => 'user@example.test',
+                'user' => [
+                    'user_id' => (string) $id,
+                    'username' => 'teste',
+                    'email' => 'user@example.test',
+                    'account_type' => 'internal',
+                    'status' => 'active',
+                ],
+                'applications' => ['erp'],
+                'roles' => ['ulimbo_admin'],
             ],
             'meta' => [
                 'request_id' => 'test-request-id',
@@ -263,8 +269,8 @@ class AuthProxyTest extends TestCase
             ->getJson('/api/v1/auth/me')
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.id', 42)
-            ->assertJsonPath('data.email', 'user@example.test');
+            ->assertJsonPath('data.user.user_id', '42')
+            ->assertJsonPath('data.user.email', 'user@example.test');
 
         Http::assertSent(function (Request $request): bool {
             return $request->method() === 'GET'
