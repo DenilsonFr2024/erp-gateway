@@ -429,4 +429,60 @@ class AuthProxyTest extends TestCase
         Http::assertSent(fn(Request $r) => $r->url() === 'http://identity.test/api/password/change'
             && $r->hasHeader('Authorization', 'Bearer valid-test-token'));
     }
+
+    // ---------------------------------------------------------------
+    // APPROVE USER
+    // ---------------------------------------------------------------
+
+    public function test_approve_user_requires_token(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake();
+
+        $this->postJson('/api/v1/auth/approve/algum-id')->assertStatus(401);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_approve_user_forwards_to_identity(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response($this->identityUserResponse(), 200),
+            'identity.test/api/admin/approve-user/uuid-123' => Http::response([
+                'success' => true,
+                'data' => [
+                    'user_id' => 'uuid-123',
+                    'status' => 'active',
+                    'message' => 'Utilizador aprovado com sucesso.',
+                ],
+            ], 200),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->postJson('/api/v1/auth/approve/uuid-123')
+            ->assertOk()
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonPath('data.message', 'Utilizador aprovado com sucesso.');
+
+        Http::assertSent(fn(Request $r) => $r->url() === 'http://identity.test/api/admin/approve-user/uuid-123'
+            && $r->hasHeader('Authorization', 'Bearer valid-test-token'));
+    }
+
+    public function test_approve_user_forbidden_for_non_admin(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'identity.test/api/user' => Http::response($this->identityUserResponse(), 200),
+            'identity.test/api/admin/approve-user/uuid-123' => Http::response([
+                'success' => false,
+                'error' => ['code' => 'FORBIDDEN'],
+            ], 403),
+        ]);
+
+        $this->withToken('valid-test-token')
+            ->postJson('/api/v1/auth/approve/uuid-123')
+            ->assertForbidden()
+            ->assertJsonPath('error.code', 'FORBIDDEN');
+    }
 }

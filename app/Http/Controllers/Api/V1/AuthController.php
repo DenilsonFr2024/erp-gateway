@@ -166,4 +166,16 @@ class AuthController extends Controller
 
         return $this->respond($upstream);
     }
+    public function approveUser(Request $request, MicroserviceClient $client, string $userId): HttpResponse
+    {
+        $upstream = $client->post(
+            'identity',
+            '/api/admin/approve-user/' . $userId,
+            null,
+            [],
+            $this->headers($request, true),
+        );
+
+        return $this->respond($upstream);
+    }
 }

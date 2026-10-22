@@ -47,6 +47,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/password/change', [AuthController::class, 'changePassword']);
+        Route::post('/auth/approve/{user_id}', [AuthController::class, 'approveUser']);
         Route::match($methods, '/core/{path?}', [ServiceProxyController::class, 'core'])
             ->where('path', '.*');
         Route::match($methods, '/master-data/{path?}', [ServiceProxyController::class, 'masterData'])
